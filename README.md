@@ -1,5 +1,10 @@
 # 🐳 Immich Auto Stack - Docker Edition
-This is a simple Pyhon script, dressed as a Docker container, that stacks together photos. 
+
+![](images/stacks.png)
+
+This is a simple Pyhon script, dressed as a Docker container, that stacks together photos. Immich has stacks, yes. They are not editable through the UI.
+
+![](images/strip.png)
 
 ⚠️ Currently, it stacks together only **JPG + RAW** files. This behavior can be altered by using a different stacking criteria. If you have ideas, do share them.
 
