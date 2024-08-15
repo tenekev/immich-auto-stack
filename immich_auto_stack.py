@@ -3,8 +3,12 @@
 import argparse
 import logging, sys
 from itertools import groupby
+import json
+import os
+import re
 import time
 
+from str2bool import str2bool
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -24,6 +28,66 @@ def parse_arguments():
   parser.add_argument('--skip_previous', help='Perform stacking only on photos that are not part of a stack. Much quicker.', nargs='?', default=True)
   parser.add_argument('--stack_method', help='JPGwithRAW, RAWwithJPG', nargs='?', default='JPGwithRAW')
   return parser.parse_args()
+
+criteria_default = [
+  {
+    "key": "originalFileName",
+    "split": {
+      "key": ".",
+      "index": 0
+    }
+  },
+  {
+    "key": "localDateTime"
+  }
+]
+
+def get_criteria_config():
+    criteria_override = os.environ.get("CRITERIA")
+    if criteria_override:
+        return json.loads(criteria_override)
+    return criteria_default
+
+def apply_criteria(x):
+    criteria_list = []
+    for item in get_criteria_config():
+        value = x[item["key"]]
+        if "split" in item.keys():
+            split_key = item["split"]["key"]
+            split_index = item["split"]["index"]
+            value = value.split(split_key)[split_index]
+        if "regex" in item.keys():
+            regex_key = item["regex"]["key"]
+            # expects at least one regex group to be defined
+            regex_index = item["regex"].get("index", 1)
+            match = re.match(regex_key, value)
+            if match:
+              value = match.group(regex_index)
+            elif not str2bool(os.environ.get("SKIP_MATCH_MISS")):
+              raise Exception(f"Match not found for value: {value}, regex: {regex_key}")
+            else:
+              return []
+        criteria_list.append(value)
+    return criteria_list
+
+def parent_criteria(x):
+  parent_ext = ['.jpg', '.jpeg', '.png']
+
+  parent_promote = os.environ.get("PARENT_PROMOTE", "").split(",")
+  parent_promote_baseline = 0
+
+  lower_filename = x["originalFileName"].lower()
+
+  if any(lower_filename.endswith(ext) for ext in parent_ext):
+    parent_promote_baseline -= 100
+
+  for key in parent_promote:
+    if key.lower() in lower_filename:
+      logger.info("promoting " + x["originalFileName"] + f" for key {key}")
+      parent_promote_baseline -= 1
+
+  return [parent_promote_baseline, x["originalFileName"]]
+
 
 class Immich():
   def __init__(self, url: str, key: str):
@@ -122,8 +186,12 @@ class Immich():
 
 
 def stackBy(data: list, criteria) -> list:
+  # Optional: remove incompatible file names
+  if str2bool(os.environ.get("SKIP_MATCH_MISS")):
+    data = filter(criteria, data)
+
   # Sort by primary and secondary criteria
-  data.sort(key=criteria)
+  data = sorted(data, key=criteria)
 
   # Group by primary and secondary criteria
   groups = groupby(data, key=criteria)
@@ -141,14 +209,9 @@ def stratifyStack(stack: list) -> list:
   parent_ext2 = ['.3fr', '.ari', '.arw', '.bay', '.braw', '.crw', '.cr2', '.cr3', '.cap', '.data', '.dcs', '.dcr', '.dng', '.drf', '.eip', '.erf', '.fff', '.gpr', '.iiq', '.k25', '.kdc', '.mdc', '.mef', '.mos', '.mrw', '.nef', '.nrw', '.obm', '.orf', '.pef', '.ptx', '.pxn', '.r3d', '.raf', '.raw', '.rwl', '.rw2', '.rwz', '.sr2', '.srf', '.srw', '.tif', '.x3f']
   parents = []
   children = []
-  
-  for asset in stack:
-    if any(asset['originalFileName'].lower().endswith(ext) for ext in parent_ext):
-      parents.append(asset)
-    else:
-      children.append(asset)
 
-  return parents + children
+  # Ensure the desired parent is first in the list
+  return sorted(stack, key=parent_criteria)
 
 
 def main():
@@ -173,11 +236,7 @@ def main():
   
   data = immich.fetchAssets()
 
-  criteria = lambda x: (
-    x['originalFileName'].split('.')[0], 
-    x['localDateTime']
-  )
-  stacks = stackBy(data, criteria)
+  stacks = stackBy(data, apply_criteria)
 
   for i, v in enumerate(stacks):
     key, stack = v

@@ -56,6 +56,34 @@ Or with Docker exec:
 ```sh
 docker exec -it immich-auto-stack /script/immich_auto_stack.sh
 ```
+
+## Customizing the criteria
+
+Configurable criteria allows for the customization of how files are grouped
+The default is equivalent to:
+
+```python
+lambda x: (
+  x["originalFileName"].split(".")[0],
+  x["localDateTime"]
+)
+```
+
+To override the default, pass a new configuration file into docker via
+The CRITERIA env var.
+
+```shell
+docker -e CRITERIA='[{"key": "originalFileName", "split": {"key": "_", "index": 0}}]' ...
+``` 
+
+## Parent priority
+
+Keywords can be provided to prioritize the file that is selected as the parent. For example:
+
+```shell
+docker -e PARENT_PROMOTE="edit,crop,hdr" ...
+``` 
+
 ## License
 
 This project is licensed under the GNU Affero General Public License version 3 (AGPLv3) to align with the licensing of Immich, which this script interacts with. For more details on the rights and obligations under this license, see the [GNU licenses page](https://opensource.org/license/agpl-v3).
