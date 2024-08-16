@@ -155,20 +155,15 @@ def main():
       
       if len(children_id) == 0:
         logger.info(f'{i}/{len(stacks)} Key: {key} SKIP! No new children!')
+        continue
       
-      else:
-        logger.info(f'{i}/{len(stacks)} Key: {key}')
-        logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
-        for child in stack[1:]:
-          logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
-
     else:
       children_id = [x['id'] for x in stack[1:]]
 
-      logger.info(f'{i}/{len(stacks)} Key: {key}')
-      logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
-      for child in stack[1:]:
-        logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
+    logger.info(f'{i}/{len(stacks)} Key: {key}')
+    logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
+    for child in stack[1:]:
+      logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
 
     if len(children_id) > 0:
       payload = {
