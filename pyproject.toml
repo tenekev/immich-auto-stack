@@ -2,3 +2,9 @@
 pythonpath = [
   "."
 ]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+]

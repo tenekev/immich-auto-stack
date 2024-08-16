@@ -1,0 +1,27 @@
+name: Unit tests
+
+# Influenced by https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-test.txt
+      - name: Test with pytest
+        run: |
+          pytest --junitxml=junit/test-results.xml --cov --cov-report=xml
