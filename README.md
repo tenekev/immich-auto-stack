@@ -62,6 +62,86 @@ docker exec -it immich-auto-stack /script/immich_auto_stack.sh
 ```sh
 docker build -f Dockerfile.test -t immich-auto-stack-pytest .
 docker run immich-auto-stack-pytest
+=======
+## Customizing the criteria
+
+Configurable criteria allows for the customization of how files are grouped
+The default in pretty json is:
+
+```json
+[
+  {
+    "key": "originalFileName",
+    "split": {
+      "key": ".",
+      "index": 0 // this is the default
+    }
+  },
+  {
+    "key": "localDateTime"
+  }
+]
+```
+
+Functionally, this JSON config is the same as the lamdba implementation currently in place:
+
+```python
+lambda x: (
+  x["originalFileName"].split(".")[0],
+  x["localDateTime"]
+)
+```
+
+To override the default, pass a new configuration file into docker via
+The CRITERIA env var.
+
+```shell
+docker -e CRITERIA='[{"key": "originalFileName", "split": {"key": "_", "index": 0}}]' ...
+```
+
+This is the equivalent of: 
+```python
+lambda x: (
+  x["originalFileName"].split("_")[0]
+)
+```
+
+The parser also supports regex, which adds a lot more flexibility.
+The index will select a substring using `re.match.group(index)`. For example:
+
+```json
+[
+  {
+    "key": "originalFileName",
+    "regex": {
+      "key": "([A-Z]+[-_]?[0-9]{4}([-_][0-9]{4})?)([\\._-].*)?\\.[\\w]{3,4}$",
+      "index": 1 // this is the default
+    }
+  },
+  {
+    "key": "localDateTime"
+  }
+]
+```
+
+## Parent priority
+
+By default, jpg, jpeg, and png files are prioritized to be the parent.
+
+Keywords can be provided to provide additional weight to files when sorting. For example:
+
+```shell
+docker -e PARENT_PROMOTE="edit,crop,hdr" ...
+```
+
+This will sort like this:
+
+```txt
+IMG_1234_hdr_crop.jpg   # score -102
+IMG_1234_crop.jpg       # score -101
+IMG_1234.jpg            # score -100
+IMG_1234_edit_crop.raw  # score -2
+IMG_1234.raw            # score 0
 ```
 
 ## License
