@@ -1,0 +1,9 @@
+FROM python:3.12-alpine
+
+COPY *.py *.txt tests /script/
+
+RUN pip install --no-cache-dir -r /script/requirements-test.txt \
+    && rm -rf /tmp/* /var/tmp/* /var/cache/apk/* /var/cache/distfiles/*
+
+WORKDIR /script
+CMD ["python", "-m", "pytest"]

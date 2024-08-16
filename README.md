@@ -57,6 +57,12 @@ Or with Docker exec:
 docker exec -it immich-auto-stack /script/immich_auto_stack.sh
 ```
 
+## Running tests
+
+```sh
+docker build -f Dockerfile.test -t immich-auto-stack-pytest .
+docker run immich-auto-stack-pytest
+=======
 ## Customizing the criteria
 
 Configurable criteria allows for the customization of how files are grouped
@@ -79,8 +85,6 @@ The default in pretty json is:
 
 Functionally, this JSON config is the same as the lamdba implementation currently in place:
 
-
-
 ```python
 lambda x: (
   x["originalFileName"].split(".")[0],
@@ -93,6 +97,13 @@ The CRITERIA env var.
 
 ```shell
 docker -e CRITERIA='[{"key": "originalFileName", "split": {"key": "_", "index": 0}}]' ...
+```
+
+This is the equivalent of: 
+```python
+lambda x: (
+  x["originalFileName"].split("_")[0]
+)
 ```
 
 The parser also supports regex, which adds a lot more flexibility.

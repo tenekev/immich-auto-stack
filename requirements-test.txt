@@ -1,0 +1,11 @@
+-r requirements.txt
+
+exceptiongroup==1.2.2
+Faker==27.0.0
+iniconfig==2.0.0
+packaging==24.1
+pluggy==1.5.0
+pytest==8.3.2
+python-dateutil==2.9.0.post0
+six==1.16.0
+tomli==2.0.1
