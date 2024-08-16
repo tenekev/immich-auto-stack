@@ -33,7 +33,6 @@ class Immich():
       'Accept': 'application/json'
     }
     self.assets = list()
-    self.libraries = list()
   
   def fetchAssets(self, size: int = 1000) -> list:
     payload = {
@@ -69,42 +68,6 @@ class Immich():
     logger.info(f'   Assets: {len(self.assets)}')
     
     return self.assets
-
-  def fetchLibraries(self) -> list:
-    logger.info('⬇️  Fetching libraries: ')
-
-    session = Session()
-    retry = Retry(connect=3, backoff_factor=0.5)
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-
-    response = session.get(f"{self.api_url}/libraries", headers=self.headers)
-
-    if not response.ok:
-      logger.error('   Error:', response.status_code, response.text)
-
-    self.libraries = response.json()
-
-    for lib in self.libraries:
-      logger.info(f'     {lib["id"]} {lib["name"]}')
-    logger.info(f'   Libraries: {len(self.libraries)}')
-
-    return self.libraries
-
-  def removeOfflineFiles(self, library_id: str) -> None:
-    session = Session()
-    retry = Retry(connect=3, backoff_factor=0.5)
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-
-    response = session.post(f"{self.api_url}/libraries/{library_id}/removeOffline", headers=self.headers)
-
-    if response.ok:
-      logger.info("  🟢 Success!")
-    else:
-      logger.error(f"  🔴 Error! {response.status_code} {response.text}") 
 
   def modifyAssets(self, payload: dict) -> None:
     session = Session()
