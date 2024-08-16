@@ -9,6 +9,7 @@ def asset_factory(extensions):
     file_list = [f"foo.{ext}" for ext in extensions]
     return [{"originalFileName": file} for file in file_list]
 
+
 @pytest.mark.parametrize(
     "extensions",
     [
@@ -35,22 +36,10 @@ def test_stratifyStack_returns_list_with_same_length_as_input(extensions):
 @pytest.mark.parametrize(
     "extensions,expected_first_ext",
     [
-        (
-            ["rw2", "jpeg"],
-            "jpeg"
-        ),
-        (
-            ["rw2"],
-            "rw2"
-        ),
-        (
-            ["png", "raw", "cr2", "xmp"],
-            "png"
-        ),
-        (
-            ["raw", "cr2", "xmp", "jpg"],
-            "jpg"
-        )
+        (["rw2", "jpeg"], "jpeg"),
+        (["rw2"], "rw2"),
+        (["png", "raw", "cr2", "xmp"], "png"),
+        (["raw", "cr2", "xmp", "jpg"], "jpg"),
     ],
 )
 def test_stratifyStack_puts_single_parent_at_front(extensions, expected_first_ext):
@@ -68,18 +57,9 @@ def test_stratifyStack_puts_single_parent_at_front(extensions, expected_first_ex
 @pytest.mark.parametrize(
     "extensions,expected_parents",
     [
-        (
-            ["jpg", "jpeg"],
-            ["jpg", "jpeg"]
-        ),
-        (
-            ["png", "raw", "cr2", "xmp", "jpg"],
-            ["png", "jpg"]
-        ),
-        (
-            ["png", "jpg", "png", "png"],
-            ["png", "jpg", "png", "png"]
-        ),
+        (["jpg", "jpeg"], ["jpg", "jpeg"]),
+        (["png", "raw", "cr2", "xmp", "jpg"], ["png", "jpg"]),
+        (["png", "jpg", "png", "png"], ["png", "jpg", "png", "png"]),
     ],
 )
 def test_stratifyStack_handles_multiple_parents(extensions, expected_parents):
@@ -89,8 +69,7 @@ def test_stratifyStack_handles_multiple_parents(extensions, expected_parents):
 
     # Act
     result = stratifyStack(file_list)
-    result_parents = result[:len(expected_parents_list)]
+    result_parents = result[: len(expected_parents_list)]
 
     # Assert
     assert result_parents == expected_parents_list
-
