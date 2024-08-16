@@ -46,21 +46,21 @@ class Immich():
     logger.info(f'⬇️  Fetching assets: ')
     logger.info(f'   Page size: {size}')
 
+    session = Session()
+    retry = Retry(connect=3, backoff_factor=0.5)
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+
     while payload["page"] != None:
-
-      session = Session()
-      retry = Retry(connect=3, backoff_factor=0.5)
-      adapter = HTTPAdapter(max_retries=retry)
-      session.mount('http://', adapter)
-      session.mount('https://', adapter)
-
       response = session.post(f"{self.api_url}/search/metadata", headers=self.headers, json=payload)
 
       if not response.ok:
         logger.error('   Error:', response.status_code, response.text)
 
-      assets_total = assets_total + response.json()['assets']['items']
-      payload["page"] = response.json()['assets']['nextPage']
+      response_data = response.json()
+      assets_total = assets_total + response_data['assets']['items']
+      payload["page"] = response_data['assets']['nextPage']
     
     self.assets = assets_total
     
