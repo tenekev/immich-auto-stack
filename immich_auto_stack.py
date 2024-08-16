@@ -33,7 +33,6 @@ class Immich():
       'Accept': 'application/json'
     }
     self.assets = list()
-    self.libraries = list()
   
   def fetchAssets(self, size: int = 1000) -> list:
     payload = {
@@ -47,21 +46,21 @@ class Immich():
     logger.info(f'⬇️  Fetching assets: ')
     logger.info(f'   Page size: {size}')
 
+    session = Session()
+    retry = Retry(connect=3, backoff_factor=0.5)
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+
     while payload["page"] != None:
-
-      session = Session()
-      retry = Retry(connect=3, backoff_factor=0.5)
-      adapter = HTTPAdapter(max_retries=retry)
-      session.mount('http://', adapter)
-      session.mount('https://', adapter)
-
       response = session.post(f"{self.api_url}/search/metadata", headers=self.headers, json=payload)
 
       if not response.ok:
         logger.error('   Error:', response.status_code, response.text)
 
-      assets_total = assets_total + response.json()['assets']['items']
-      payload["page"] = response.json()['assets']['nextPage']
+      response_data = response.json()
+      assets_total = assets_total + response_data['assets']['items']
+      payload["page"] = response_data['assets']['nextPage']
     
     self.assets = assets_total
     
@@ -69,42 +68,6 @@ class Immich():
     logger.info(f'   Assets: {len(self.assets)}')
     
     return self.assets
-
-  def fetchLibraries(self) -> list:
-    logger.info('⬇️  Fetching libraries: ')
-
-    session = Session()
-    retry = Retry(connect=3, backoff_factor=0.5)
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-
-    response = session.get(f"{self.api_url}/libraries", headers=self.headers)
-
-    if not response.ok:
-      logger.error('   Error:', response.status_code, response.text)
-
-    self.libraries = response.json()
-
-    for lib in self.libraries:
-      logger.info(f'     {lib["id"]} {lib["name"]}')
-    logger.info(f'   Libraries: {len(self.libraries)}')
-
-    return self.libraries
-
-  def removeOfflineFiles(self, library_id: str) -> None:
-    session = Session()
-    retry = Retry(connect=3, backoff_factor=0.5)
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
-
-    response = session.post(f"{self.api_url}/libraries/{library_id}/removeOffline", headers=self.headers)
-
-    if response.ok:
-      logger.info("  🟢 Success!")
-    else:
-      logger.error(f"  🔴 Error! {response.status_code} {response.text}") 
 
   def modifyAssets(self, payload: dict) -> None:
     session = Session()
@@ -192,20 +155,15 @@ def main():
       
       if len(children_id) == 0:
         logger.info(f'{i}/{len(stacks)} Key: {key} SKIP! No new children!')
+        continue
       
-      else:
-        logger.info(f'{i}/{len(stacks)} Key: {key}')
-        logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
-        for child in stack[1:]:
-          logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
-
     else:
       children_id = [x['id'] for x in stack[1:]]
 
-      logger.info(f'{i}/{len(stacks)} Key: {key}')
-      logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
-      for child in stack[1:]:
-        logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
+    logger.info(f'{i}/{len(stacks)} Key: {key}')
+    logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
+    for child in stack[1:]:
+      logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
 
     if len(children_id) > 0:
       payload = {
