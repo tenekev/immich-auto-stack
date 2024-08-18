@@ -57,9 +57,9 @@ def test_stratifyStack_puts_single_parent_at_front(extensions, expected_first_ex
 @pytest.mark.parametrize(
     "extensions,expected_parents",
     [
-        (["jpg", "jpeg"], ["jpg", "jpeg"]),
-        (["png", "raw", "cr2", "xmp", "jpg"], ["png", "jpg"]),
-        (["png", "jpg", "png", "png"], ["png", "jpg", "png", "png"]),
+        (["jpg", "jpeg"], ["jpeg", "jpg"]),
+        (["png", "raw", "cr2", "xmp", "jpg"], ["jpg", "png"]),
+        (["png", "jpg", "png", "png"], ["jpg", "png", "png", "png"]),
     ],
 )
 def test_stratifyStack_handles_multiple_parents(extensions, expected_parents):
