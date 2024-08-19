@@ -3,9 +3,16 @@ name: Unit tests
 # Influenced by https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python
 
 on: [push]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
     strategy:
