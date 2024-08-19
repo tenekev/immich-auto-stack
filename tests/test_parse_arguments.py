@@ -32,4 +32,4 @@ def test_skip_previous_input_value_maps_to_expected_boolean(
         args = parse_arguments()
 
     # Assert
-    assert bool(args.skip_previous) is expected_value
+    assert args.skip_previous is expected_value

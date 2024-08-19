@@ -25,7 +25,14 @@ def parse_arguments():
   parser = argparse.ArgumentParser(description='Fetch file report and delete orphaned media assets from Immich.')
   parser.add_argument('--api_key', help='Immich API key for authentication', nargs='?', default=None)
   parser.add_argument('--api_url', help='Full address for Immich, including protocol and port', nargs='?', default=None)
-  parser.add_argument('--skip_previous', help='Perform stacking only on photos that are not part of a stack. Much quicker.', nargs='?', default=True)
+  parser.add_argument(
+    '--skip_previous',
+    help='Perform stacking only on photos that are not part of a stack. Much quicker.',
+    type=str2bool,
+    nargs='?',
+    const=True,
+    default=True
+  )
   parser.add_argument('--stack_method', help='JPGwithRAW, RAWwithJPG', nargs='?', default='JPGwithRAW')
   return parser.parse_args()
 
