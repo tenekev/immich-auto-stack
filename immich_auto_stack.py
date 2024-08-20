@@ -21,14 +21,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def parse_arguments():
-  parser = argparse.ArgumentParser(description='Fetch file report and delete orphaned media assets from Immich.')
-  parser.add_argument('--api_key', help='Immich API key for authentication', nargs='?', default=None)
-  parser.add_argument('--api_url', help='Full address for Immich, including protocol and port', nargs='?', default=None)
-  parser.add_argument('--skip_previous', help='Perform stacking only on photos that are not part of a stack. Much quicker.', nargs='?', default=True)
-  parser.add_argument('--stack_method', help='JPGwithRAW, RAWwithJPG', nargs='?', default='JPGwithRAW')
-  return parser.parse_args()
-
 criteria_default = [
   {
     "key": "originalFileName",
@@ -73,7 +65,7 @@ def apply_criteria(x):
 def parent_criteria(x):
   parent_ext = ['.jpg', '.jpeg', '.png']
 
-  parent_promote = os.environ.get("PARENT_PROMOTE", "").split(",")
+  parent_promote = list(filter(None, os.environ.get("PARENT_PROMOTE", "").split(",")))
   parent_promote_baseline = 0
 
   lower_filename = x["originalFileName"].lower()
@@ -173,28 +165,24 @@ def stratifyStack(stack: list) -> list:
 
 
 def main():
-  args = parse_arguments()
 
-  # Prompt for admin API key if not provided
-  api_key = args.api_key if args.api_key else input('Enter the Immich API key: ')
+  api_key = os.environ.get("API_KEY", False)
 
-  # Prompt for Immich API address if not provided
-  api_url = args.api_url if args.api_url else input('Enter the full web address for Immich, including protocol and port: ')
+  api_url = os.environ.get("API_URL", "http://immich_server:3001/api")
+
+  skip_previous = str2bool(os.environ.get("SKIP_PREVIOUS", True))
 
   if not api_key:
-    print("API key is required")
-    return
-  if not api_url:
-    print("API URL is required")
+    logger.warn("API key is required")
     return
 
   logger.info('============== INITIALIZING ==============')
   
   immich = Immich(api_url, api_key)
   
-  data = immich.fetchAssets()
+  assets = immich.fetchAssets()
 
-  stacks = stackBy(data, apply_criteria)
+  stacks = stackBy(assets, apply_criteria)
 
   for i, v in enumerate(stacks):
     key, stack = v
@@ -204,7 +192,7 @@ def main():
     parent_id = stack[0]['id']
     children_id = []
     
-    if args.skip_previous:
+    if skip_previous:
       children_id = [x['id'] for x in stack[1:] if x['stackCount'] == None ]
       
       if len(children_id) == 0:
@@ -216,6 +204,7 @@ def main():
 
     logger.info(f'{i}/{len(stacks)} Key: {key}')
     logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
+    
     for child in stack[1:]:
       logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
 
