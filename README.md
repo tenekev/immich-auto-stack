@@ -2,11 +2,11 @@
 
 ![](images/stacks.png)
 
-This is a simple Pyhon script, dressed as a Docker container, that stacks together photos. Immich has stacks, yes. They are not editable through the UI.
+This is a simple , yet highly configurable Python script, dressed as a Docker container, that stacks together photos. Immich has stacks, yes. They are not editable through the UI. 
 
 ![](images/strip.png)
 
-⚠️ Currently, it stacks together only **JPG + RAW** files. This behavior can be altered by using a different stacking criteria. If you have ideas, do share them.
+By default, it stacks together only **JPG + RAW** files. This behavior can be altered by using a different stacking criteria. Explanation below.
 
 The script can be run manually, or via cronjob by providing a crontab expression to the container. The container can be added to the Immich compose stack directly.
 
@@ -17,7 +17,7 @@ Instructions can be found in the Immich docs - [Obtain the API key](https://immi
 To perform a manually triggered run, use the following command:
 
 ```bash
-docker run --rm -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/tenekev/immich-auto-stack:latest /script/immich_auto_stack.sh
+docker run --rm -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/tenekev/immich-auto-stack:latest /script/immich_auto_stack.py
 ```
 
 ### 🔁 Running on a schedule
@@ -41,31 +41,44 @@ services:
     image: ghcr.io/tenekev/immich-auto-stack:latest
     restart: unless-stopped
     environment:
+
+      # This is default. Can be omitted. 
       API_URL: http://immich_server:3001/api
-      API_KEY: xxxxxxxxxxxxxxxxx               # https://immich.app/docs/features/command-line-interface#obtain-the-api-key
-      SKIP_PREVIOUS: True                      # Whether or not to modify photos that are already in stacks. Going over all assets takes a lot more time.
-      CRON_EXPRESSION: "0 */1 * * *"           # Run every hour
+
+      # https://immich.app/docs/features/command-line-interface#obtain-the-api-key
+      API_KEY: xxxxxxxxxxxxxxxxx
+
+      # Whether or not to modify photos that are already in stacks. Going over all assets takes a lot more time.
+      SKIP_PREVIOUS: True
+
+      # This is default. Can be omitted. Read further for customization.
+      # CRITERIA: '[{"key": "originalFileName","split": {"key": ".","index": 0}},{"key": "localDateTime"}]'
+
+      # This is default. Can be omitted. If you want to promote other parent criteria like "HDR" or "Edit".
+      # PARENT_PROMOTE: ""
+      
+      # This is default. Can be omitted. 
+      # SKIP_MATCH_MISS: False
+
+      # Run every hour. Use https://crontab.guru/ to generate new expressions.
+      CRON_EXPRESSION: "0 */1 * * *"
       TZ: Europe/Sofia
 ```
 
-You can still trigger the script manually by issuing the following command in the container shell:
+You can still trigger the script manually by issuing the following command inside the container shell. It will read any relevant environmental variables set during creation.
 ```sh
-/script/immich_auto_stack.sh
+/script/immich_auto_stack.py
 ```
 Or with Docker exec:
 ```sh
-docker exec -it immich-auto-stack /script/immich_auto_stack.sh
+docker exec -it immich-auto-stack /script/immich_auto_stack.py
 ```
 
-## Running tests
-
-```sh
-docker build -f Dockerfile.test -t immich-auto-stack-pytest .
-docker run immich-auto-stack-pytest
-=======
 ## Customizing the criteria
 
-Configurable criteria allows for the customization of how files are grouped
+### the defaults
+
+Configurable stacking criteria allows for the customization of how files are grouped
 The default in pretty json is:
 
 ```json
@@ -83,7 +96,7 @@ The default in pretty json is:
 ]
 ```
 
-Functionally, this JSON config is the same as the lamdba implementation currently in place:
+Functionally, this JSON config transforms to the following. 
 
 ```python
 lambda x: (
@@ -92,19 +105,28 @@ lambda x: (
 )
 ```
 
-To override the default, pass a new configuration file into docker via
-The CRITERIA env var.
+The first criteria is the filename without the extension. The second criteria is the datetime of creation. This criteria aims to stack RAW+JPG images from cameras. By strippig the extension you get identical name and datetime that determine a stack.
+
+### Basic customization of the criteria
+
+To override the default, pass a new criteria by using the CRITERIA env var.
 
 ```shell
+# From
+docker -e CRITERIA='[{"key": "originalFileName", "split": {"key": ".", "index": 0}},{"key": "localDateTime"}]' ...
+# To
 docker -e CRITERIA='[{"key": "originalFileName", "split": {"key": "_", "index": 0}}]' ...
 ```
 
 This is the equivalent of: 
+
 ```python
 lambda x: (
   x["originalFileName"].split("_")[0]
 )
 ```
+
+### REGEX customization of the criteria
 
 The parser also supports regex, which adds a lot more flexibility.
 The index will select a substring using `re.match.group(index)`. For example:
@@ -126,9 +148,11 @@ The index will select a substring using `re.match.group(index)`. For example:
 
 ## Parent priority
 
-By default, jpg, jpeg, and png files are prioritized to be the parent.
+By default, `jpg`, `jpeg`, and `png` files are prioritized to be the parent. The parent is the first asset in a stack and it's the one to show first when you click on a stacked item in your timeline. 
 
-Keywords can be provided to provide additional weight to files when sorting. For example:
+The defaults are `jpg`, `jpeg`, and `png` because they often contain the finished image. That is especially true for systems that add filters/recipes/in-camera edits or simple profile corrections, on top of the final image.
+
+Keywords can be provided to provide additional weight to files when sorting. Maybe you performed an edit that should show first or there is an HDR version of the image. For example:
 
 ```shell
 docker -e PARENT_PROMOTE="edit,crop,hdr" ...
@@ -142,6 +166,13 @@ IMG_1234_crop.jpg       # score -101
 IMG_1234.jpg            # score -100
 IMG_1234_edit_crop.raw  # score -2
 IMG_1234.raw            # score 0
+```
+
+## Running tests
+
+```sh
+docker build -f Dockerfile.test -t immich-auto-stack-pytest .
+docker run immich-auto-stack-pytest
 ```
 
 ## License
