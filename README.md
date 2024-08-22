@@ -4,7 +4,7 @@
 
 This is a simple , yet highly configurable Python script, dressed as a Docker container, that stacks together photos. Immich has stacks, yes. They are not editable through the UI. 
 
-<img src="images/strip.png" style="margin: 2rem auto; display :block; max-height: 350px"/>
+<img align="center" height="350" src="images/strip.png" />
 
 ⚠️ By default, it stacks together only **JPG + RAW** files, taken on digital cameras. This behavior can be altered by using a [custom stacking criteria](#-customizing-the-stacking-criteria).
 
