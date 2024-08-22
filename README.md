@@ -94,7 +94,7 @@ The defaults are `jpg`, `jpeg`, and `png` because they often contain the finishe
   <img height="350" src="images/image.png" />
 </p>
 
-Keywords can be provided to provide additional weight to files when sorting. Maybe you performed an edit that should show first or there is an HDR version of the image. For example:
+Keywords can be provide additional weight to files when sorting. Maybe you performed an edit that should show first or there is an HDR version of the image. For example:
 
 ```shell
 docker -e PARENT_PROMOTE="edit,crop,hdr" ...
@@ -182,6 +182,12 @@ The index will select a substring using `re.match.group(index)`. For example:
 ]
 ```
 
+A graphical representation of what this REGEX filter does. More can be generated at https://regex101.com.
+
+<p align="center">
+  <img src="https://private-user-images.githubusercontent.com/2699164/358442166-1f14c504-b2af-433b-9e10-0ac9b9352b76.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjQzMjcxNDIsIm5iZiI6MTcyNDMyNjg0MiwicGF0aCI6Ii8yNjk5MTY0LzM1ODQ0MjE2Ni0xZjE0YzUwNC1iMmFmLTQzM2ItOWUxMC0wYWM5YjkzNTJiNzYucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MDgyMiUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDA4MjJUMTE0MDQyWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9M2RiM2U1ODk2Mjg0MWFjMmM0YjM2ZGVkNzUzYjBhYjM2Y2FiMmFiYThkMTcwYmVjZmIwZWMxMzQ5YzJhZjM5MyZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmYWN0b3JfaWQ9MCZrZXlfaWQ9MCZyZXBvX2lkPTAifQ.XzBgjD0k9v3kvp4JQcee-XdvPaJ9RJ-dTooRHp6mt6s" />
+</p>
+
 ## 🔵 Custom criteria examples
 
 ### 🔷 Stack criteria based on filename only: 
@@ -260,7 +266,7 @@ There aren't that many other keys that can be used as a stacking criteria becaus
  - `thumbhash` is mostly consistent when you want to stack dublicates instead of deleting them. It's mostly consistent when stacking RAW+JPG but not always.
 - `fileCreatedAt`, `fileModifiedAt` can be unique for each file, preventing reliable stacking.
 
-You can see all available keys for an asset by editing the URL to get to the API enty for it:
+You can see all available keys for an asset by editing the URL to get to the API entry for it:
 
 ```
 https://your-immich.tld/photos/00000000-0000-0000-0000-000000000000
