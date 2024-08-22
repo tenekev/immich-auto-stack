@@ -8,6 +8,7 @@ This is a simple , yet highly configurable Python script, dressed as a Docker co
 <p align="center">
   <img height="350" src="images/strip.png" />
 </p>
+
 ⚠️ By default, it stacks together only **JPG + RAW** files, taken on digital cameras. This behavior can be altered by using a [custom stacking criteria](#-customizing-the-stacking-criteria).
 
 ✨ Huge thanks to [@m3brown](https://github.com/m3brown) for adding a comprehensive stacking criteria!
