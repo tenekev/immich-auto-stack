@@ -8,24 +8,26 @@ This is a simple , yet highly configurable Python script, dressed as a Docker co
 
 By default, it stacks together only **JPG + RAW** files. This behavior can be altered by using a different stacking criteria. Explanation below.
 
+## 🔵 Runnning it
+
 The script can be run manually, or via cronjob by providing a crontab expression to the container. The container can be added to the Immich compose stack directly.
 
-### 🔑 Obtaining an Immich API key
+### 🔷 Obtaining an Immich API key
 Instructions can be found in the Immich docs - [Obtain the API key](https://immich.app/docs/features/command-line-interface#obtain-the-api-key)
 
-### 🔂 Running once
+### 🔷 Running once
 To perform a manually triggered run, use the following command:
 
 ```bash
 docker run --rm -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/tenekev/immich-auto-stack:latest /script/immich_auto_stack.py
 ```
 
-### 🔁 Running on a schedule
+### 🔷 Running on a schedule
 ```bash
 docker run --name immich-auto-stack -e TZ="Europe/Sofia" -e CRON_EXPRESSION="0 * * * *" -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/tenekev/immich-auto-stack:latest
 ```
 
-### 📃 Running as part of the Immich docker-compose.yml
+### 🔷 Running as part of the Immich docker-compose.yml
 Adding the container to Immich's `docker-compose.yml` file:
 
 ```yml
@@ -74,9 +76,33 @@ Or with Docker exec:
 docker exec -it immich-auto-stack /script/immich_auto_stack.py
 ```
 
-## Customizing the criteria
+## 🔵 Parent priority
 
-### The defaults
+By default, `jpg`, `jpeg`, and `png` files are prioritized to be the parent. The parent is the first asset in a stack and it's the one to show first when you click on a stacked item in your timeline. 
+
+The defaults are `jpg`, `jpeg`, and `png` because they often contain the finished image. That is especially true for systems that add filters/recipes/in-camera edits or simple profile corrections, on top of the final image.
+
+![](images/image.png)
+
+Keywords can be provided to provide additional weight to files when sorting. Maybe you performed an edit that should show first or there is an HDR version of the image. For example:
+
+```shell
+docker -e PARENT_PROMOTE="edit,crop,hdr" ...
+```
+
+This will sort like this:
+
+```txt
+IMG_1234_hdr_crop.jpg   # score -102
+IMG_1234_crop.jpg       # score -101
+IMG_1234.jpg            # score -100
+IMG_1234_edit_crop.raw  # score -2
+IMG_1234.raw            # score 0
+```
+
+## 🔵 Customizing the stacking criteria
+
+### 🔷 The defaults
 
 Configurable stacking criteria allows for the customization of how files are grouped
 The default in pretty json is:
@@ -107,7 +133,7 @@ lambda x: (
 
 The first criteria is the filename without the extension. The second criteria is the datetime of creation. This criteria aims to stack RAW+JPG images from cameras. By strippig the extension you get identical name and datetime that determine a stack.
 
-### Basic customization of the criteria
+### 🔷 Basic customization of the criteria
 
 To override the default, pass a new criteria by using the CRITERIA env var.
 
@@ -126,7 +152,7 @@ lambda x: (
 )
 ```
 
-### REGEX customization of the criteria
+### 🔷 REGEX customization of the criteria
 
 The parser also supports regex, which adds a lot more flexibility.
 The index will select a substring using `re.match.group(index)`. For example:
@@ -146,32 +172,9 @@ The index will select a substring using `re.match.group(index)`. For example:
 ]
 ```
 
-## Parent priority
+## 🔵 Custom criteria examples
 
-By default, `jpg`, `jpeg`, and `png` files are prioritized to be the parent. The parent is the first asset in a stack and it's the one to show first when you click on a stacked item in your timeline. 
-
-The defaults are `jpg`, `jpeg`, and `png` because they often contain the finished image. That is especially true for systems that add filters/recipes/in-camera edits or simple profile corrections, on top of the final image.
-
-![](images/image.png)
-
-Keywords can be provided to provide additional weight to files when sorting. Maybe you performed an edit that should show first or there is an HDR version of the image. For example:
-
-```shell
-docker -e PARENT_PROMOTE="edit,crop,hdr" ...
-```
-
-This will sort like this:
-
-```txt
-IMG_1234_hdr_crop.jpg   # score -102
-IMG_1234_crop.jpg       # score -101
-IMG_1234.jpg            # score -100
-IMG_1234_edit_crop.raw  # score -2
-IMG_1234.raw            # score 0
-```
-## Examples
-
-### Stack criteria based on filename only: 
+### 🔷 Stack criteria based on filename only: 
 Maybe your desired stack items were scattered through time. Beware with images from digital cameras - the count rolls over at 9999 and you end up with duplicate filenames in the long run.
 ```json
 [
@@ -182,18 +185,18 @@ Maybe your desired stack items were scattered through time. Beware with images f
       "index": 0 // this is the default
     }
   }
-}
+]
 ```
-### Stack criteria based on date & time only:
+### 🔷 Stack criteria based on date & time only:
 Won't work for bursts.
 ```json
 [
   {
     "key": "localDateTime"
   }
-}
+]
 ```
-### Stack criteria based on date only:
+### 🔷 Stack criteria based on date only:
 This won't work very well on its own. In combination with `"originalFileName"` it can stack a sequence that for some reason does not have the same timecode.
 ```json
 [
@@ -204,9 +207,9 @@ This won't work very well on its own. In combination with `"originalFileName"` i
       "index": 0
     }
   }
-}
+]
 ```
-### Stack criteria for filenames that may contain other keywords:
+### 🔷 Stack criteria for filenames that may contain other keywords:
 Like RAW, ORIGINAL, EDIT. It picks out only the initial image sequence. More can be read in issue #1.
 ```json
 [
@@ -217,9 +220,9 @@ Like RAW, ORIGINAL, EDIT. It picks out only the initial image sequence. More can
       "index": 1
     }
   }
-}
+]
 ```
-### Multiple stack criterias:
+### 🔷 Multiple stack criterias:
 Like the above but now the secondary criteria limites the stack to a specific date (not datetime, note that the timecode is also split).
 
 ⚠️ The order of the criteria matters! in this example, primary criteria is filename, secondary is date.
@@ -239,9 +242,9 @@ Like the above but now the secondary criteria limites the stack to a specific da
       "index": 0
     }
   }
-}
+]
 ```
-### Stacking by other keys:
+### 🔷 Stacking by other keys:
 There aren't that many other keys that can be used as a stacking criteria because they are either unique or not as consistent as `originalFileName` and `localDateTime`. Regardless, here are some of them - `thumbhash`, `fileCreatedAt`, `fileModifiedAt`.
 
  - `thumbhash` is mostly consistent when you want to stack dublicates instead of deleting them. It's mostly consistent when stacking RAW+JPG but not always.
@@ -254,11 +257,11 @@ https://your-immich.tld/photos/00000000-0000-0000-0000-000000000000
 
 https://your-immich.tld/api/assets/00000000-0000-0000-0000-000000000000
 ```
-### Stacking by EXIF data:
+### 🔷 Stacking by EXIF data:
 Initallly this scrip relied entirely on the EXIF portion of the asset data.
 Unfortunately, not all assets have EXIF data available and even if they did, most of it isn't appropriate for stacking. Thus stacking by EXIF data was replaced by more widely available properties.
 
-## Running tests
+## 🔵 Running tests
 ```sh
 docker build -f Dockerfile.test -t immich-auto-stack-pytest .
 docker run immich-auto-stack-pytest
