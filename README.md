@@ -1,11 +1,13 @@
 # 🐳 Immich Auto Stack - Docker Edition
 
-<img src="images/stacks.png" style="margin: 2rem auto; display :block"/>
+<p align="center">
+  <img width="570" src="images/stacks.png" />
+</p>
 
 This is a simple , yet highly configurable Python script, dressed as a Docker container, that stacks together photos. Immich has stacks, yes. They are not editable through the UI. 
-
-<img align="center" height="350" src="images/strip.png" />
-
+<p align="center">
+  <img height="350" src="images/strip.png" />
+</p>
 ⚠️ By default, it stacks together only **JPG + RAW** files, taken on digital cameras. This behavior can be altered by using a [custom stacking criteria](#-customizing-the-stacking-criteria).
 
 ✨ Huge thanks to [@m3brown](https://github.com/m3brown) for adding a comprehensive stacking criteria!
@@ -84,7 +86,10 @@ By default, `jpg`, `jpeg`, and `png` files are prioritized to be the parent. The
 
 The defaults are `jpg`, `jpeg`, and `png` because they often contain the finished image. That is especially true for systems that add filters/recipes/in-camera edits or simple profile corrections, on top of the final image.
 
-<img src="images/image.png" style="margin: 2rem auto; display :block; max-height: 350px"/>
+<p align="center">
+  <img height="350" src="images/image.png" />
+</p>
+
 Keywords can be provided to provide additional weight to files when sorting. Maybe you performed an edit that should show first or there is an HDR version of the image. For example:
 
 ```shell
