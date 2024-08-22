@@ -1,12 +1,15 @@
-# 🐳 Immich Auto Stack - Docker Edition
+# Immich Auto Stack
 
 <p align="center">
   <img width="570" src="images/stacks.png" />
 </p>
 
-This is a simple , yet highly configurable Python script, dressed as a Docker container, that stacks together photos. Immich has stacks, yes. They are not editable through the UI. 
+Immich has a stacking functionality. the act of stacking assets is not accessible through the UI. It is accessible via the API.
+
+This is a simple, yet highly configurable Python script, dressed as a Docker container, that stacks together photos, based on certain criterias.
+
 <p align="center">
-  <img height="350" src="images/strip.png" />
+  <img width="100%" src="images/strip.png" />
 </p>
 
 ⚠️ By default, it stacks together only **JPG + RAW** files, taken on digital cameras. This behavior can be altered by using a [custom stacking criteria](#-customizing-the-stacking-criteria).
