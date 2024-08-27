@@ -6,7 +6,7 @@
 
 Immich has a stacking functionality. the act of stacking assets is not accessible through the UI. It is accessible via the API.
 
-This is a simple, yet highly configurable Python script, dressed as a Docker container, that stacks together photos, based on certain criterias.
+This is a simple, yet highly configurable Python script, dressed as a Docker container, that stacks together photos, based on certain criteria.
 
 <p align="center">
   <img width="100%" src="images/strip.png" />
@@ -16,7 +16,7 @@ This is a simple, yet highly configurable Python script, dressed as a Docker con
 
 ✨ Huge thanks to [@m3brown](https://github.com/m3brown) for adding a comprehensive stacking criteria!
 
-## 🔵 Runnning it
+## 🔵 Running it
 
 The script can be run manually, or via cronjob by providing a crontab expression to the container. The container can be added to the Immich compose stack directly.
 
@@ -63,11 +63,26 @@ services:
 
       # This is default. Can be omitted. Read further for customization.
       # CRITERIA: '[{"key": "originalFileName","split": {"key": ".","index": 0}},{"key": "localDateTime"}]'
+      # You can also break this into a multi-line string for better readability
+      # CRITERIA: >
+      #   [
+      #     {
+      #       "key": "originalFileName",
+      #       "split": {
+      #         "key": ".",
+      #         "index": 0
+      #       }
+      #     },
+      #     {
+      #       "key": "localDateTime"
+      #     }
+      #   ]
 
       # This is default. Can be omitted. If you want to promote other parent criteria like "HDR" or "Edit".
       # PARENT_PROMOTE: ""
       
-      # This is default. Can be omitted. 
+      # This is default. Can be omitted. Consider setting to true if you have a CRITERIA regex that
+      # is not intended to match all the photos in your library.
       # SKIP_MATCH_MISS: False
 
       # Run every hour. Use https://crontab.guru/ to generate new expressions.
@@ -86,7 +101,7 @@ docker exec -it immich-auto-stack /script/immich_auto_stack.py
 
 ## 🔵 Parent priority
 
-By default, `jpg`, `jpeg`, and `png` files are prioritized to be the parent. The parent is the first asset in a stack and it's the one to show first when you click on a stacked item in your timeline. 
+By default, `jpg`, `jpeg`, and `png` files are prioritized to be the parent. The parent is the first asset in a stack and it's the one to show first when you click on a stacked item in your timeline.
 
 The defaults are `jpg`, `jpeg`, and `png` because they often contain the finished image. That is especially true for systems that add filters/recipes/in-camera edits or simple profile corrections, on top of the final image.
 
@@ -114,7 +129,7 @@ IMG_1234.raw            # score 0
 
 ### 🔷 The defaults
 
-Configurable stacking criteria allows for the customization of how files are grouped
+Configurable stacking criteria allows for the customization of how files are grouped.
 The default in pretty json is:
 
 ```json
@@ -132,7 +147,7 @@ The default in pretty json is:
 ]
 ```
 
-Functionally, this JSON config transforms to the following. 
+Functionally, this JSON config transforms to the following.
 
 ```python
 lambda x: (
@@ -141,7 +156,7 @@ lambda x: (
 )
 ```
 
-The first criteria is the filename without the extension. The second criteria is the datetime of creation. This criteria aims to stack RAW+JPG images from cameras. By strippig the extension you get identical name and datetime that determine a stack.
+The first criteria is the filename without the extension. The second criteria is the datetime of creation. This criteria aims to stack RAW+JPG images from cameras. By stripping the extension you get identical name and datetime that determine a stack.
 
 ### 🔷 Basic customization of the criteria
 
@@ -154,7 +169,7 @@ docker -e CRITERIA='[{"key": "originalFileName", "split": {"key": ".", "index": 
 docker -e CRITERIA='[{"key": "originalFileName", "split": {"key": "_", "index": 0}}]' ...
 ```
 
-This is the equivalent of: 
+This is the equivalent of:
 
 ```python
 lambda x: (
@@ -185,8 +200,19 @@ The index will select a substring using `re.match.group(index)`. For example:
 A graphical representation of what this REGEX filter does. More can be generated at https://regex101.com.
 
 <p align="center">
-  <img src="https://private-user-images.githubusercontent.com/2699164/358442166-1f14c504-b2af-433b-9e10-0ac9b9352b76.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MjQzMjcxNDIsIm5iZiI6MTcyNDMyNjg0MiwicGF0aCI6Ii8yNjk5MTY0LzM1ODQ0MjE2Ni0xZjE0YzUwNC1iMmFmLTQzM2ItOWUxMC0wYWM5YjkzNTJiNzYucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MDgyMiUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDA4MjJUMTE0MDQyWiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9M2RiM2U1ODk2Mjg0MWFjMmM0YjM2ZGVkNzUzYjBhYjM2Y2FiMmFiYThkMTcwYmVjZmIwZWMxMzQ5YzJhZjM5MyZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmYWN0b3JfaWQ9MCZrZXlfaWQ9MCZyZXBvX2lkPTAifQ.XzBgjD0k9v3kvp4JQcee-XdvPaJ9RJ-dTooRHp6mt6s" />
+  <img width="80%" src="images/filename_regex.png" />
 </p>
+
+By default, any regex provided are assumed to match all image files and will throw an exception if
+a single file does not match the regex. If the regex is not intended to match all files, the SKIP_MATCH_MISS
+flag can be used to filter out files that do not match the regex pattern.
+
+```shell
+docker -e SKIP_MATCH_MISS=true ...
+```
+
+This can be useful if you can't come up with a single regex to satisfy all of your photos. SKIP_MATCH_MISS
+would enable you to run multiple passes with multiple different regex patterns.
 
 ## 🔵 Custom criteria examples
 
@@ -239,7 +265,7 @@ Like RAW, ORIGINAL, EDIT. It picks out only the initial image sequence. More can
 ]
 ```
 ### 🔷 Multiple stack criterias:
-Like the above but now the secondary criteria limites the stack to a specific date (not datetime, note that the timecode is also split).
+Like the above but now the secondary criteria limits the stack to a specific date (not datetime, note that the timecode is also split).
 
 ⚠️ The order of the criteria matters! in this example, primary criteria is filename, secondary is date.
 ```json
@@ -263,7 +289,7 @@ Like the above but now the secondary criteria limites the stack to a specific da
 ### 🔷 Stacking by other keys:
 There aren't that many other keys that can be used as a stacking criteria because they are either unique or not as consistent as `originalFileName` and `localDateTime`. Regardless, here are some of them - `thumbhash`, `fileCreatedAt`, `fileModifiedAt`.
 
- - `thumbhash` is mostly consistent when you want to stack dublicates instead of deleting them. It's mostly consistent when stacking RAW+JPG but not always.
+ - `thumbhash` is mostly consistent when you want to stack duplicates instead of deleting them. It's mostly consistent when stacking RAW+JPG but not always.
 - `fileCreatedAt`, `fileModifiedAt` can be unique for each file, preventing reliable stacking.
 
 You can see all available keys for an asset by editing the URL to get to the API entry for it:
@@ -274,7 +300,7 @@ https://your-immich.tld/photos/00000000-0000-0000-0000-000000000000
 https://your-immich.tld/api/assets/00000000-0000-0000-0000-000000000000
 ```
 ### 🔷 Stacking by EXIF data:
-Initallly this scrip relied entirely on the EXIF portion of the asset data.
+Initially this script relied entirely on the EXIF portion of the asset data.
 Unfortunately, not all assets have EXIF data available and even if they did, most of it isn't appropriate for stacking. Thus stacking by EXIF data was replaced by more widely available properties.
 
 ## 🔵 Running tests
