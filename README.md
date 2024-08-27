@@ -63,6 +63,20 @@ services:
 
       # This is default. Can be omitted. Read further for customization.
       # CRITERIA: '[{"key": "originalFileName","split": {"key": ".","index": 0}},{"key": "localDateTime"}]'
+      # You can also break this into a multi-line string for better readability
+      # CRITERIA: >
+      #   [
+      #     {
+      #       "key": "originalFileName",
+      #       "split": {
+      #         "key": ".",
+      #         "index": 0
+      #       }
+      #     },
+      #     {
+      #       "key": "localDateTime"
+      #     }
+      #   ]
 
       # This is default. Can be omitted. If you want to promote other parent criteria like "HDR" or "Edit".
       # PARENT_PROMOTE: ""
