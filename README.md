@@ -67,7 +67,8 @@ services:
       # This is default. Can be omitted. If you want to promote other parent criteria like "HDR" or "Edit".
       # PARENT_PROMOTE: ""
       
-      # This is default. Can be omitted. 
+      # This is default. Can be omitted. Consider setting to true if you have a CRITERIA regex that
+      # is not intended to match all the photos in your library.
       # SKIP_MATCH_MISS: False
 
       # Run every hour. Use https://crontab.guru/ to generate new expressions.
@@ -187,6 +188,17 @@ A graphical representation of what this REGEX filter does. More can be generated
 <p align="center">
   <img width="80%" src="images/filename_regex.png" />
 </p>
+
+By default, any regex provided are assumed to match all image files and will throw an exception if
+a single file does not match the regex. If the regex is not intended to match all files, the SKIP_MATCH_MISS
+flag can be used to filter out files that do not match the regex pattern.
+
+```shell
+docker -e SKIP_MATCH_MISS=true ...
+```
+
+This can be useful if you can't come up with a single regex to satisfy all of your photos. SKIP_MATCH_MISS
+would enable you to run multiple passes with multiple different regex patterns.
 
 ## 🔵 Custom criteria examples
 
