@@ -4,7 +4,7 @@
   <img width="570" src="images/stacks.png" />
 </p>
 
-Immich has a stacking functionality. the act of stacking assets is not accessible through the UI. It is accessible via the API.
+Immich has a stacking functionality. The act of stacking assets is not accessible through the UI thus most people aren't aware of it. Stacking is only accessible via the API at the moment.
 
 This is a simple, yet highly configurable Python script, dressed as a Docker container, that stacks together photos, based on certain criteria.
 
@@ -286,6 +286,7 @@ Like the above but now the secondary criteria limits the stack to a specific dat
   }
 ]
 ```
+
 ### 🔷 Stacking by other keys:
 There aren't that many other keys that can be used as a stacking criteria because they are either unique or not as consistent as `originalFileName` and `localDateTime`. Regardless, here are some of them - `thumbhash`, `fileCreatedAt`, `fileModifiedAt`.
 
