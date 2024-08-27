@@ -58,6 +58,9 @@ services:
       # https://immich.app/docs/features/command-line-interface#obtain-the-api-key
       API_KEY: xxxxxxxxxxxxxxxxx
 
+      # This is default. Can be omitted. When true, prints output but does not submit any changes
+      DRY_RUN: False
+
       # Whether or not to modify photos that are already in stacks. Going over all assets takes a lot more time.
       SKIP_PREVIOUS: True
 
