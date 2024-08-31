@@ -171,11 +171,16 @@ def main():
 
   skip_previous = str2bool(os.environ.get("SKIP_PREVIOUS", True))
 
+  dry_run = str2bool(os.environ.get("DRY_RUN", False))
+
   if not api_key:
     logger.warn("API key is required")
     return
 
   logger.info('============== INITIALIZING ==============')
+
+  if dry_run:
+    logger.info('🔒  Dry run enabled, no changes will be applied')
   
   immich = Immich(api_url, api_key)
   
@@ -213,8 +218,9 @@ def main():
         "stackParentId": parent_id
       }
 
-      time.sleep(.1)
-      immich.modifyAssets(payload)
+      if not dry_run:
+        time.sleep(.1)
+        immich.modifyAssets(payload)
 
 if __name__ == '__main__':
   main()
