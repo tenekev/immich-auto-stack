@@ -42,7 +42,9 @@ def get_criteria_config():
 def apply_criteria(x):
     criteria_list = []
     for item in get_criteria_config():
-        value = x[item["key"]]
+        value = x.get(item["key"])
+        if value is None:
+            return []
         if "split" in item.keys():
             split_key = item["split"]["key"]
             split_index = item["split"]["index"]
