@@ -1,12 +1,19 @@
 from faker import Faker
+import os
 import pytest
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 
-from immich_auto_stack import stackBy
+from immich_auto_stack import stackBy, apply_criteria
 
 
 def mock_criteria(x):
     return (x["originalFileName"].split(".")[0], x["localDateTime"])
+
+
+def mock_empty_criteria(x):
+    # Can return [] if localDateTime is absent or None
+    dt = x.get("localDateTime")
+    return [dt] if dt else []
 
 
 fake = Faker()
@@ -103,3 +110,51 @@ def test_stackBy_does_not_group_files_with_same_filename_but_different_datetime(
 
     # Assert
     assert result == expected_result
+
+
+@pytest.mark.parametrize(
+    "is_skip_match_miss",
+    [
+        True,
+        False,
+    ],
+)
+def test_stackBy_will_not_process_photos_with_empty_key(
+    is_skip_match_miss
+):
+    # If the criteria provided does not result in a meaningful key, we don't want to
+    # process those files. For example, a criteria of "thumbhash" could create a group
+    # of all the files that have a None thumbhash.
+    #
+    # This test proves that we either raise an exception or invite the user to
+    # declare SKIP_MATCH_MISS to filter out those keyless results.
+
+    # Arrange
+    date_time = fake.date_time()
+    file_base = "test_filename"
+    file_1 = asset_factory(file_base=file_base, extension="jpg", date_time=date_time)
+    file_2 = asset_factory(file_base=file_base, extension="jpg", date_time=date_time)
+    file_3 = asset_factory(file_base=file_base, extension="jpg", date_time=date_time)
+    file_4 = asset_factory(file_base=file_base, extension="jpg", date_time=date_time)
+    file_2["localDateTime"] = None
+    file_3["localDateTime"] = None
+    expected_result = [
+        ([date_time], [file_1, file_4]),
+    ]
+    input_kwargs = {
+        "data": [file_1, file_2, file_3, file_4],
+        "criteria": mock_empty_criteria,
+    }
+
+    # Act
+    # Assert
+    with patch.dict(os.environ, {"SKIP_MATCH_MISS": str(is_skip_match_miss)}):
+        if not is_skip_match_miss:
+            with pytest.raises(Exception) as execinfo:
+                stackBy(**input_kwargs)
+            assert "Some photos do not match the criteria" in str(execinfo.value)
+        else:
+            result = stackBy(**input_kwargs)
+            assert result == [
+                ([date_time], [file_1, file_4]),
+            ]
