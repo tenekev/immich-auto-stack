@@ -39,10 +39,27 @@ def get_criteria_config():
         return json.loads(criteria_override)
     return criteria_default
 
-def apply_criteria(x):
+def apply_criteria(x: dict) -> list:
+    """
+    Given a photo dataset, pick out the identified keys as defined by CRITERIA.
+
+    Keys can be raw values or a subset of values (using split or regex modifiers).
+
+    If any of the key values is abnormal (None, absent, regex mismatch), return
+    an empty list.
+    """
     criteria_list = []
     for item in get_criteria_config():
-        value = x[item["key"]]
+        value = x.get(item["key"])
+        if value is None:
+            # None is a undesireable key value for this project because we rely on keys
+            # to categorize similar photos, and typically None represents the absence
+            # of information.
+            #
+            # A real scenario example: suppose some photos have not yet generated
+            # thumbnails. It would be undesireable to create a stack of all the photos
+            # whose thumbhash is None.
+            return []
         if "split" in item.keys():
             split_key = item["split"]["key"]
             split_index = item["split"]["index"]
@@ -155,6 +172,14 @@ def stackBy(data: list, criteria) -> list:
   
   # Filter only groups that have more than one item
   groups = [x for x in groups if len(x[1]) > 1 ] 
+
+  # Raise error if any groups have an empty key
+  if any((group[0] == [] or None in group[0]) for group in groups):
+      raise Exception(
+          "Some photos do not match the criteria you provided. Consider refining your"
+          "criteria. If the criteria was not intended to match all files, use the"
+          "SKIP_MATCH_MISS environment variable to skip processing of those photos."
+      )
 
   return groups
 

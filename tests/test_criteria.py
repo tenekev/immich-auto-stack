@@ -11,10 +11,11 @@ fake = Faker()
 static_datetime = fake.date_time()
 
 
-def asset_factory(filename="IMG_1234.jpg", date_time=static_datetime):
+def asset_factory(filename="IMG_1234.jpg", date_time=static_datetime, **kwargs):
     return {
         "originalFileName": filename,
         "localDateTime": date_time,
+        **kwargs
     }
 
 
@@ -248,3 +249,90 @@ def test_groupby_default_criteria_given_different_datetimes_return_multiple_grou
 
     # Assert
     assert len(result) == 3
+
+@pytest.mark.parametrize(
+    "criteria,kwargs,control_kwargs",
+    [
+        [
+            # This scenario tests a single key with None value
+            '[{"key": "thumbhash"}]',
+            {"thumbhash": None},
+            {"thumbhash": "foo"},
+        ],
+        [
+            # This scenario tests multiple keys where only one is None
+            '[{"key": "thumbhash"},{"key": "other_metadata"}]',
+            {"thumbhash": None, "other_metadata": "foo"},
+            {"thumbhash": "foo", "other_metadata": "foo"},
+        ],
+        [
+            # This scenario tests multiple keys where all are None
+            '[{"key": "thumbhash"},{"key": "other_metadata"}]',
+            {"thumbhash": None, "other_metadata": None},
+            {"thumbhash": "foo", "other_metadata": "foo"},
+        ],
+        [
+            # This scenario tests multiple keys where one is absent
+            '[{"key": "thumbhash"},{"key": "other_metadata"}]',
+            {"other_metadata": "foo"},
+            {"thumbhash": "foo", "other_metadata": "foo"},
+        ],
+        [
+            # This scenario tests multiple keys where all are absent
+            '[{"key": "thumbhash"},{"key": "other_metadata"}]',
+            {},
+            {"thumbhash": "foo", "other_metadata": "foo"},
+        ],
+    ],
+)
+def test_apply_criteria_returns_empty_list_when_key_is_None(criteria, kwargs, control_kwargs):
+    """
+    None is a undesireable key value for this project because we rely on keys to
+    categorize similar photos, and typically None represents the absence of information.
+
+    A real scenario example: suppose some photos have not yet generated thumbnails. It
+    would be undesireable to create a stack of all the photos whose thumbhash is None.
+    """
+
+    # Arrange
+    photo = asset_factory(**kwargs)
+    # The purpose of control_photo is to prove the test results are not due
+    # to a bug in our test logic.
+    control_photo = asset_factory(**control_kwargs)
+
+    # Act
+    with patch.dict(os.environ, {"CRITERIA": criteria}):
+        photo_keys = apply_criteria(photo)
+        control_photo_keys = apply_criteria(control_photo)
+
+    # Assert
+    assert control_photo_keys == list(control_kwargs.values())
+    assert photo_keys == []
+
+def test_groupby_criteria_given_None_value_does_not_error():
+    """
+    Writing a failing test first for this scenario:
+      CRITERIA='[{"key": "thumbhash"}]'
+    can throw this error if thumbhash has a None value:
+      TypeError: '<' not supported between instances of 'NoneType' and 'str'
+
+    Once this test is passing, that proves we have fixed the error scenario.
+    """
+
+    # Arrange
+    criteria = '[{"key": "thumbhash"}]'
+    test_datetime = fake.unique.date_time()
+    asset_list = [
+        asset_factory("IMG_1234.jpg", thumbhash="foo"),
+        asset_factory("IMG_1234.png", thumbhash=None),
+        asset_factory("IMG_1234.raw"),
+    ]
+
+    # Act
+    with patch.dict(os.environ, {"CRITERIA": criteria}):
+        result = [(k, len(list(g))) for k, g in groupby(asset_list, apply_criteria)]
+
+    # Assert
+    assert len(result) == 2
+    assert result[0] == (["foo"], 1)
+    assert result[1] == ([], 2)
