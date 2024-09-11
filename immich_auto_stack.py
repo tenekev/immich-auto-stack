@@ -105,6 +105,7 @@ class Immich():
       'Accept': 'application/json'
     }
     self.assets = list()
+    self.stacks = list()
   
   def fetchAssets(self, size: int = 1000) -> list:
     payload = {
@@ -141,15 +142,39 @@ class Immich():
     
     return self.assets
 
-  def modifyAssets(self, payload: dict) -> None:
+  def fetchStacks(self) -> list:
+    stacks_total = list()
+
+    logger.info(f'⬇️  Fetching stacks: ')
+
     session = Session()
     retry = Retry(connect=3, backoff_factor=0.5)
     adapter = HTTPAdapter(max_retries=retry)
     session.mount('http://', adapter)
     session.mount('https://', adapter)
 
-    response = session.put(f"{self.api_url}/assets", headers=self.headers, json=payload)
+    response = session.get(f"{self.api_url}/stacks", headers=self.headers)
 
+    if not response.ok:
+      logger.error('   Error:', response.status_code, response.text)
+
+    response_data = response.json()
+    stacks_total = stacks_total + response_data
+    
+    self.stacks = stacks_total
+    
+    logger.info(f'   Stacks: {len(self.stacks)}')
+    
+    return self.stacks
+
+  def createStack(self, payload: dict) -> None:
+    session = Session()
+    retry = Retry(connect=3, backoff_factor=0.5)
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+
+    response = session.post(f"{self.api_url}/stacks", headers=self.headers, json=payload)
     if response.ok:
       logger.info("  🟢 Success!")
     else:
@@ -210,6 +235,7 @@ def main():
   immich = Immich(api_url, api_key)
   
   assets = immich.fetchAssets()
+  existing_stacks = immich.fetchStacks()
 
   stacks = stackBy(assets, apply_criteria)
 
@@ -217,35 +243,35 @@ def main():
     key, stack = v
 
     stack = stratifyStack(stack)
-
+    all_stacks = {x['primaryAssetId']: x for x in existing_stacks}
     parent_id = stack[0]['id']
     children_id = []
-    
     if skip_previous:
-      children_id = [x['id'] for x in stack[1:] if x['stackCount'] == None ]
-      
-      if len(children_id) == 0:
-        logger.info(f'{i}/{len(stacks)} Key: {key} SKIP! No new children!')
-        continue
-      
+      existing_stack = all_stacks.get(parent_id)
+      if existing_stack and len(existing_stack['assets']) >= len(stack):
+          logger.info(f'{i}/{len(stacks)} Key: {key} SKIP! Existing stack has more or equal children ({len(existing_stack["assets"])}) than current stack ({len(stack)})')
+          continue
+      elif existing_stack:
+        children_id = [x['id'] for x in existing_stack['assets']]
+        children_id.extend([x['id'] for x in stack[1:]])
+      else:
+        children_id = [x['id'] for x in stack[1:]]
     else:
       children_id = [x['id'] for x in stack[1:]]
 
-    logger.info(f'{i}/{len(stacks)} Key: {key}')
-    logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
-    
-    for child in stack[1:]:
-      logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
-
     if len(children_id) > 0:
+      logger.info(f'{i}/{len(stacks)} Key: {key}')
+      logger.info(f'   Parent name: {stack[0]["originalFileName"]} ID: {parent_id}')
+      for child in stack[1:]:
+        logger.info(f'   Child name:  {child["originalFileName"]} ID: {child["id"]}')
+
       payload = {
-        "ids": children_id,
-        "stackParentId": parent_id
+        "assetIds": [x['id'] for x in stack],
       }
 
       if not dry_run:
         time.sleep(.1)
-        immich.modifyAssets(payload)
+        immich.createStack(payload)
 
 if __name__ == '__main__':
   main()
