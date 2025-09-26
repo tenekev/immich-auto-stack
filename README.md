@@ -190,7 +190,7 @@ The index will select a substring using `re.match.group(index)`. For example:
   {
     "key": "originalFileName",
     "regex": {
-      "key": "([A-Z]+[-_]?[0-9]{4}([-_][0-9]{4})?)([\\._-].*)?\\.[\\w]{3,4}$",
+      "key": "([A-Z]+[-_]?[0-9]{4,}([-_][0-9]{4,})?)([\\._-].*)?\\.[\\w]{3,4}$",
       "index": 1 // this is the default
     }
   },
