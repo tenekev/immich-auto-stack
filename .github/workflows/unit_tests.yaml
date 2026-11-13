@@ -3,6 +3,7 @@ name: Unit tests
 # Influenced by https://docs.github.com/en/actions/use-cases-and-examples/building-and-testing/building-and-testing-python
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main

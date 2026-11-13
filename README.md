@@ -8,6 +8,15 @@ Immich has a stacking functionality. The act of stacking assets is not accessibl
 
 This is a simple, yet highly configurable Python script, dressed as a Docker container, that stacks together photos, based on certain criteria.
 
+> **Fork note:** This fork of [tenekev/immich-auto-stack](https://github.com/tenekev/immich-auto-stack) is updated for current Immich (v2/v3, tested on v3.4.1). See upstream [issue #22](https://github.com/tenekev/immich-auto-stack/issues/22). Changes from upstream:
+>
+> - `fetchAssets` logs errors with an f-string and exits cleanly, and sends `page` as an int. Immich now returns `nextPage` as a string but validates `page` as a number.
+> - `isStacked()` reads `GET /api/assets/{id}` because `search/metadata` no longer returns stack info (`stackCount` / `stack` are missing).
+> - `createStack()` uses `POST /api/stacks` with `{assetIds: [parent, ...children]}` instead of the removed `PUT /api/assets` body that set `stackParentId`.
+> - `SKIP_PREVIOUS` skips a group if any member is already stacked.
+>
+> GitHub Actions publishes the image to GHCR (`.github/workflows/build-image.yaml`) on pushes to `main`. Pull `ghcr.io/benny254565/immich-auto-stack:latest`. The fork owner may need to enable Actions on this fork before that tag exists.
+
 <p align="center">
   <img width="100%" src="images/strip.png" />
 </p>
@@ -27,12 +36,12 @@ Instructions can be found in the Immich docs - [Obtain the API key](https://immi
 To perform a manually triggered run, use the following command:
 
 ```bash
-docker run --rm -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/tenekev/immich-auto-stack:latest /script/immich_auto_stack.py
+docker run --rm -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/benny254565/immich-auto-stack:latest /script/immich_auto_stack.py
 ```
 
 ### 🔷 Running on a schedule
 ```bash
-docker run --name immich-auto-stack -e TZ="Europe/Sofia" -e CRON_EXPRESSION="0 * * * *" -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/tenekev/immich-auto-stack:latest
+docker run --name immich-auto-stack -e TZ="Europe/Sofia" -e CRON_EXPRESSION="0 * * * *" -e API_URL="https://immich.mydomain.com/api/" -e API_KEY="xxxxx" -e SKIP_PREVIOUS=True ghcr.io/benny254565/immich-auto-stack:latest
 ```
 
 ### 🔷 Running as part of the Immich docker-compose.yml
@@ -48,7 +57,7 @@ services:
 
   immich-auto-stack:
     container_name: immich-auto-stack
-    image: ghcr.io/tenekev/immich-auto-stack:latest
+    image: ghcr.io/benny254565/immich-auto-stack:latest
     restart: unless-stopped
     environment:
 

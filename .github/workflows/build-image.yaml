@@ -1,6 +1,7 @@
 name: build-image
 
 on:
+  workflow_dispatch:
   push:
     paths-ignore:
     - '**/**.md'

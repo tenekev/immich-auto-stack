@@ -128,11 +128,13 @@ class Immich():
       response = session.post(f"{self.api_url}/search/metadata", headers=self.headers, json=payload)
 
       if not response.ok:
-        logger.error('   Error:', response.status_code, response.text)
+        logger.error(f'   Error: {response.status_code} {response.text}')
+        raise SystemExit(1)
 
       response_data = response.json()
       assets_total = assets_total + response_data['assets']['items']
-      payload["page"] = response_data['assets']['nextPage']
+      nxt = response_data['assets'].get('nextPage')
+      payload["page"] = int(nxt) if nxt not in (None, '') else None
     
     self.assets = assets_total
     
@@ -140,6 +142,25 @@ class Immich():
     logger.info(f'   Assets: {len(self.assets)}')
     
     return self.assets
+
+  def isStacked(self, asset_id: str) -> bool:
+    # search/metadata no longer includes stack info, so ask for the asset itself
+    response = Session().get(f"{self.api_url}/assets/{asset_id}", headers=self.headers)
+    if not response.ok:
+      logger.error(f"  🔴 Error reading asset {asset_id}: {response.status_code} {response.text}")
+      return True
+    return bool(response.json().get('stack'))
+
+  def createStack(self, asset_ids: list) -> None:
+    session = Session()
+    retry = Retry(connect=3, backoff_factor=0.5)
+    session.mount('http://', HTTPAdapter(max_retries=retry))
+    session.mount('https://', HTTPAdapter(max_retries=retry))
+    response = session.post(f"{self.api_url}/stacks", headers=self.headers, json={"assetIds": asset_ids})
+    if response.ok:
+      logger.info("  🟢 Success!")
+    else:
+      logger.error(f"  🔴 Error! {response.status_code} {response.text}")
 
   def modifyAssets(self, payload: dict) -> None:
     session = Session()
@@ -222,7 +243,10 @@ def main():
     children_id = []
     
     if skip_previous:
-      children_id = [x['id'] for x in stack[1:] if x['stackCount'] == None ]
+      if any(immich.isStacked(x['id']) for x in stack):
+        logger.info(f'{i}/{len(stacks)} Key: {key} SKIP! Already stacked')
+        continue
+      children_id = [x['id'] for x in stack[1:]]
       
       if len(children_id) == 0:
         logger.info(f'{i}/{len(stacks)} Key: {key} SKIP! No new children!')
@@ -245,7 +269,7 @@ def main():
 
       if not dry_run:
         time.sleep(.1)
-        immich.modifyAssets(payload)
+        immich.createStack([parent_id] + children_id)
 
 if __name__ == '__main__':
   main()
